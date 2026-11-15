@@ -20,15 +20,7 @@ In basic RAG, we embed the user's question as-is and search the vector database.
 
 **Core idea:** *Don't change the documents — change the question so it matches the documents better.*
 
-```
- Basic RAG:
-   Question ───────────────────────────► Retriever ──► Docs ──► LLM ──► Answer
-
- RAG with Query Transformation:
-   Question ──► [ LLM transforms query ] ──► Retriever ──► Docs ──► LLM ──► Answer
-                        ▲
-                 the extra step
-```
+![What is Query Transformation](diagrams/png/00-overview.png)
 
 **The 5 techniques at a glance:**
 
@@ -59,16 +51,7 @@ The LLM generates:
 - Q3: What unwanted reactions are associated with Paracetamol?
 
 ### Diagram
-```
-                         ┌──► Q1 ──► Vector DB ──► [B, D, E] ──┐
-                         │                                      │
-  User Question ──► LLM ─┼──► Q2 ──► Vector DB ──► [A, F, G] ──┼──► Merge +       ──► LLM ──► Answer
-  (+ original query)     │                                      │    Remove
-                         └──► Q3 ──► Vector DB ──► [A, B, C] ──┘    Duplicates
-                                                                    [A,B,C,D,E,F,G]
-       generate              search each query               combine results
-       variations            separately
-```
+![Multi-Query](diagrams/png/01-multi-query.png)
 
 ### How it works
 1. User asks a question.
@@ -136,15 +119,7 @@ If a document is missing from a list, it gets 0 from that list.
 **A wins** because it appears near the top **consistently** across all searches.
 
 ### Diagram
-```
-                         ┌──► Q1 ──► Vector DB ──► 1.A  2.B  3.C ──┐
-                         │                                          │
-  User Question ──► LLM ─┼──► Q2 ──► Vector DB ──► 1.B  2.A  3.D ──┼──► Apply RRF ──► Top-ranked ──► LLM ──► Answer
-                         │                                          │    (re-rank)      docs
-                         └──► Q3 ──► Vector DB ──► 1.C  2.A  3.B ──┘                  A > B > C > D
-                                                    ▲
-                                        each list is RANKED
-```
+![RAG Fusion](diagrams/png/02-rag-fusion.png)
 
 ### How it works
 1. LLM generates multiple query variations.
@@ -203,23 +178,9 @@ Sub-questions:
 **Key difference from Multi-Query:** Multi-Query asks the **same** question differently. Decomposition asks **different** smaller questions.
 
 ### Diagram
-```
-                                   ┌──► Sub-Q1: Pricing of A?   ──► Retrieve ──► docs ──┐
-                                   │                                                     │
-  Complex Question ──► LLM ────────┼──► Sub-Q2: Pricing of B?   ──► Retrieve ──► docs ──┼──► Combine +     ──► LLM ──► Final
-  (multi-part)       (decompose)   │                                                     │    De-duplicate       (original      Answer
-                                   ├──► Sub-Q3: Features of A/B? ──► Retrieve ──► docs ──┤    context            question +
-                                   │                                                     │                       all context)
-                                   └──► Sub-Q4: Security?       ──► Retrieve ──► docs ──┘
-```
+![Query Decomposition](diagrams/png/03-decomposition.png)
 
-**Two styles:**
-```
- Parallel (independent sub-questions):     Sequential (one depends on another):
-   Q1 ─┐                                     Q1 ──► answer1
-   Q2 ─┼──► combine ──► answer                          │
-   Q3 ─┘                                     Q2 (uses answer1) ──► answer2 ──► final answer
-```
+**Two styles:** **Parallel** when sub-questions are independent; **Sequential** when one depends on another's answer.
 Example of sequential (multi-hop): *"Who is the CEO of the company that makes Product A?"* → first find the company, then find its CEO.
 
 ### How it works
@@ -266,23 +227,7 @@ Sometimes a question is so specific that the database has no direct match. So we
 - The LLM uses this background knowledge to explain the specific problem.
 
 ### Diagram
-```
-                          ┌──► Step-back (broad) question ──► Retrieve ──► General / concept docs ──┐
-                          │    "What affects performance                                            │
-  Specific Question ──► LLM    with large datasets?"                                                ├──► Combine ──► LLM ──► Answer
-  "Why is my Python app   │                                                                         │    context    (original
-   slow with 1000s of     └──► Original question ─────────► Retrieve ──► Specific docs ─────────────┘               question)
-   DB records?"                (used as-is)
-```
-```
- Abstraction level:
-
-      ▲  Broad      "What affects performance on large data?"   ◄── Step-Back moves UP
-      │
-      │  Original   "Why is my Python app slow with DB records?"
-      │
-      ▼  Narrow     "Is my app slow due to missing index?"      ◄── Decomposition moves DOWN
-```
+![Step-Back Prompting](diagrams/png/04-step-back.png)
 
 ### How it works
 1. User asks a specific question.
@@ -325,20 +270,7 @@ HyDE's trick: **answer-to-answer similarity is stronger than question-to-answer 
 - Embed this text → search vector DB → get real documents about grounding and retrieval.
 
 ### Diagram
-```
-  User Question ──► LLM ──► Hypothetical Document ──► Embedding ──► Vector DB ──► REAL docs ──┐
-  "How does RAG            "RAG reduces hallucinations   Model        search       from your    │
-   reduce                   by retrieving external      [0.21,        by vector    knowledge    │
-   hallucinations?"         knowledge and grounding..."  0.45, ...]                base         │
-        │                   (may contain errors —                                               │
-        │                    only used for SEARCH)                                              ▼
-        └────────────────────────────────────────────────────────────────────────────────► LLM ──► Final Answer
-                                     original question + real retrieved docs                  (grounded in real docs)
-```
-```
- Normal RAG:   embed(QUESTION)              ──► search
- HyDE:         embed(FAKE ANSWER by LLM)   ──► search
-```
+![HyDE](diagrams/png/05-hyde.png)
 
 ### How it works
 1. User asks a question.
@@ -397,17 +329,7 @@ HyDE's trick: **answer-to-answer similarity is stronger than question-to-answer 
 
 ## Which One Should I Pick?
 
-```
-                        What's wrong with the user's question?
-                                       │
-     ┌──────────────────┬──────────────┼───────────────────┬─────────────────────┐
-     ▼                  ▼              ▼                   ▼                     ▼
- Different words    Need best     Many parts /        Too specific,        Short query, looks
- than documents     ordering too  multi-hop           needs background     nothing like docs
-     │                  │              │                   │                     │
-     ▼                  ▼              ▼                   ▼                     ▼
- MULTI-QUERY       RAG FUSION     DECOMPOSITION        STEP-BACK               HyDE
-```
+![Which technique should I use](diagrams/png/06-which-to-pick.png)
 
 **Rule of thumb:**
 - Start with **plain RAG**. Add a technique only when retrieval is failing.
