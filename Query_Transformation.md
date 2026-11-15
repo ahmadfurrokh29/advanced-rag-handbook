@@ -20,7 +20,7 @@ In basic RAG, we embed the user's question as-is and search the vector database.
 
 **Core idea:** *Don't change the documents — change the question so it matches the documents better.*
 
-![What is Query Transformation](diagrams/png/00-overview.png)
+![What is Query Transformation](diagrams/query-transformation/00-overview.png)
 
 **The 5 techniques at a glance:**
 
@@ -51,7 +51,7 @@ The LLM generates:
 - Q3: What unwanted reactions are associated with Paracetamol?
 
 ### Diagram
-![Multi-Query](diagrams/png/01-multi-query.png)
+![Multi-Query](diagrams/query-transformation/01-multi-query.png)
 
 ### How it works
 1. User asks a question.
@@ -119,7 +119,7 @@ If a document is missing from a list, it gets 0 from that list.
 **A wins** because it appears near the top **consistently** across all searches.
 
 ### Diagram
-![RAG Fusion](diagrams/png/02-rag-fusion.png)
+![RAG Fusion](diagrams/query-transformation/02-rag-fusion.png)
 
 ### How it works
 1. LLM generates multiple query variations.
@@ -178,7 +178,7 @@ Sub-questions:
 **Key difference from Multi-Query:** Multi-Query asks the **same** question differently. Decomposition asks **different** smaller questions.
 
 ### Diagram
-![Query Decomposition](diagrams/png/03-decomposition.png)
+![Query Decomposition](diagrams/query-transformation/03-decomposition.png)
 
 **Two styles:** **Parallel** when sub-questions are independent; **Sequential** when one depends on another's answer.
 Example of sequential (multi-hop): *"Who is the CEO of the company that makes Product A?"* → first find the company, then find its CEO.
@@ -227,7 +227,7 @@ Sometimes a question is so specific that the database has no direct match. So we
 - The LLM uses this background knowledge to explain the specific problem.
 
 ### Diagram
-![Step-Back Prompting](diagrams/png/04-step-back.png)
+![Step-Back Prompting](diagrams/query-transformation/04-step-back.png)
 
 ### How it works
 1. User asks a specific question.
@@ -270,7 +270,7 @@ HyDE's trick: **answer-to-answer similarity is stronger than question-to-answer 
 - Embed this text → search vector DB → get real documents about grounding and retrieval.
 
 ### Diagram
-![HyDE](diagrams/png/05-hyde.png)
+![HyDE](diagrams/query-transformation/05-hyde.png)
 
 ### How it works
 1. User asks a question.
@@ -329,7 +329,7 @@ HyDE's trick: **answer-to-answer similarity is stronger than question-to-answer 
 
 ## Which One Should I Pick?
 
-![Which technique should I use](diagrams/png/06-which-to-pick.png)
+![Which technique should I use](diagrams/query-transformation/06-which-to-pick.png)
 
 **Rule of thumb:**
 - Start with **plain RAG**. Add a technique only when retrieval is failing.
